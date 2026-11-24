@@ -1,1 +1,371 @@
 
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Studio Vente Express — Prix, Stock, Scripts & WhatsApp</title>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: #f1f5f9; color: #0f172a; padding: 16px; }
+    .container { max-width: 480px; margin: 0 auto; }
+    .card { background: #ffffff; border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06); }
+    .hero { background: #0f172a; color: #ffffff; border-radius: 18px; padding: 18px; margin-bottom: 14px; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .badge-free { background: #fef3c7; color: #92400e; }
+    .badge-pro { background: #d1fae5; color: #065f46; }
+    h1 { margin: 8px 0 6px; font-size: 20px; line-height: 1.25; }
+    h2 { margin: 0 0 10px; font-size: 15px; }
+    p { margin: 0 0 10px; font-size: 13px; line-height: 1.45; }
+    label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #334155; }
+    input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; margin-bottom: 10px; background: #fff; }
+    textarea { min-height: 92px; font-size: 12px; }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    button, .btn-link { display: block; width: 100%; text-align: center; text-decoration: none; border: none; border-radius: 11px; padding: 11px 12px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .btn-green { background: #059669; color: #ffffff; }
+    .btn-dark { background: #0f172a; color: #ffffff; }
+    .btn-light { background: #e2e8f0; color: #0f172a; }
+    .price-box { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .price-val { font-size: 18px; font-weight: 800; color: #047857; }
+    .product-item { border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px; margin-top: 10px; background: #f8fafc; }
+    .stock-ok { background: #dcfce7; color: #166534; }
+    .stock-low { background: #fee2e2; color: #991b1b; }
+    .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: #0f172a; color: #fff; padding: 10px 16px; border-radius: 999px; font-size: 12px; font-weight: 700; display: none; z-index: 50; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:12px; color:#cbd5e1;">STUDIO VENTE EXPRESS</span>
+        <span id="planBadge" class="badge badge-free">GRATUIT (0/2)</span>
+      </div>
+      <h1>Calcule tes prix & stocks, génère tes scripts et vends sur WhatsApp</h1>
+      <p style="color:#cbd5e1; margin:0;">Outil simple sur téléphone pour vendeurs et entrepreneurs francophones.</p>
+    </div>
+
+    <!-- ZONE PAIEMENT CHARIOW & ACTIVATION PRO -->
+    <div id="proBox" class="card" style="border:1px solid #a7f3d0; background:#f0fdf4;">
+      <h2>Débloquer l'accès PRO illimité</h2>
+      <p>Version gratuite limitée à 2 produits. Passe en PRO en un paiement unique (Mobile Money / Carte) puis entre ton code d'accès.</p>
+      <a id="chariowLink" href="https://chariow.com" target="_blank" rel="noreferrer" class="btn-link btn-green" style="margin-bottom:10px;">
+        Acheter l'accès PRO (Mobile Money / Carte)
+      </a>
+      <label for="proCodeInput">Code d'activation PRO</label>
+      <div class="row-2" style="margin-bottom:0;">
+        <input id="proCodeInput" type="text" placeholder="Ex. PRO2026" style="margin-bottom:0;" />
+        <button type="button" onclick="activatePro()" class="btn-dark" style="margin-bottom:0;">Activer PRO</button>
+      </div>
+    </div>
+
+    <!-- REGLAGES VENDEUR -->
+    <div class="card">
+      <h2>Mes réglages WhatsApp & Devise</h2>
+      <div class="row-2">
+        <div>
+          <label for="waPhone">WhatsApp (avec indicatif)</label>
+          <input id="waPhone" type="tel" placeholder="22670000000" />
+        </div>
+        <div>
+          <label for="currency">Devise</label>
+          <select id="currency" onchange="saveSettings()">
+            <option value="EUR">EUR (€)</option>
+            <option value="FCFA">FCFA</option>
+            <option value="CAD">CAD ($)</option>
+            <option value="MAD">MAD</option>
+          </select>
+        </div>
+      </div>
+      <button type="button" onclick="saveSettings()" class="btn-light">Enregistrer mes réglages</button>
+    </div>
+
+    <!-- CALCULATEUR PRIX, MARGE & STOCK + GENERATEUR -->
+    <div class="card">
+      <h2>1 & 2. Calculateur Prix/Stock + Fiche & Script</h2>
+
+      <label for="prodName">Nom du produit</label>
+      <input id="prodName" type="text" placeholder="Ex. Pack 100 poussins / Crème éclaircissante" />
+
+      <div class="row-3">
+        <div>
+          <label for="costPrice">Coût achat</label>
+          <input id="costPrice" type="number" step="any" placeholder="1000" oninput="updatePreviewPrice()" />
+        </div>
+        <div>
+          <label for="extraFees">Frais / pertes</label>
+          <input id="extraFees" type="number" step="any" value="0" oninput="updatePreviewPrice()" />
+        </div>
+        <div>
+          <label for="marginPct">Marge (%)</label>
+          <input id="marginPct" type="number" min="0" max="90" value="35" oninput="updatePreviewPrice()" />
+        </div>
+      </div>
+
+      <div class="price-box">
+        <span style="font-size:13px; font-weight:700; color:#065f46;">Prix de vente conseillé :</span>
+        <span id="suggestedPriceText" class="price-val">0 EUR</span>
+      </div>
+
+      <div class="row-2">
+        <div>
+          <label for="stockQty">Stock actuel</label>
+          <input id="stockQty" type="number" value="10" />
+        </div>
+        <div>
+          <label for="minStock">Seuil alerte stock</label>
+          <input id="minStock" type="number" value="3" />
+        </div>
+      </div>
+
+      <label>3 points forts (fiche WhatsApp & script TikTok)</label>
+      <input id="b1" type="text" placeholder="Point fort 1 (ex. Qualité vérifiée)" />
+      <input id="b2" type="text" placeholder="Point fort 2 (ex. Livraison rapide)" />
+      <input id="b3" type="text" placeholder="Point fort 3 (ex. Prix direct)" />
+
+      <button type="button" onclick="addProduct()" class="btn-green">Générer & enregistrer le produit</button>
+    </div>
+
+    <!-- LISTE PRODUITS + SCRIPTS + COMMANDE EXPRESS WHATSAPP -->
+    <div class="card">
+      <h2>3. Mes Produits, Scripts & Commande Express</h2>
+      <div id="productList"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // PERSONNALISE CES DEUX VALEURS AVANT DE PUBLIER :
+    const SECRET_PRO_CODE = "PRO2026";
+    const CHARIOW_PAYMENT_URL = "https://chariow.com";
+
+    const STORAGE_KEY = "studio_vente_express_v1";
+
+    let state = {
+      isPro: false,
+      whatsapp: "",
+      currency: "EUR",
+      products: []
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          state = { ...state, ...parsed };
+        }
+      } catch (e) {}
+      document.getElementById("chariowLink").href = CHARIOW_PAYMENT_URL;
+      document.getElementById("waPhone").value = state.whatsapp || "";
+      document.getElementById("currency").value = state.currency || "EUR";
+      updatePreviewPrice();
+      renderAll();
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderAll();
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.style.display = "block";
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => { t.style.display = "none"; }, 2200);
+    }
+
+    function saveSettings() {
+      state.whatsapp = document.getElementById("waPhone").value.replace(/[^0-9]/g, "");
+      state.currency = document.getElementById("currency").value;
+      saveState();
+      updatePreviewPrice();
+      showToast("Réglages enregistrés");
+    }
+
+    function activatePro() {
+      const entered = document.getElementById("proCodeInput").value.trim().toUpperCase();
+      if (entered && entered === SECRET_PRO_CODE.toUpperCase()) {
+        state.isPro = true;
+        saveState();
+        showToast("Accès PRO activé !");
+      } else {
+        showToast("Code PRO invalide");
+      }
+    }
+
+    function computeSuggestedPrice(cost, fees, margin) {
+      const total = (parseFloat(cost) || 0) + (parseFloat(fees) || 0);
+      const m = Math.min(Math.max(parseFloat(margin) || 0, 0), 90);
+      if (total <= 0) return 0;
+      return Math.ceil(total / (1 - m / 100));
+    }
+
+    function updatePreviewPrice() {
+      const price = computeSuggestedPrice(
+        document.getElementById("costPrice").value,
+        document.getElementById("extraFees").value,
+        document.getElementById("marginPct").value
+      );
+      const curr = document.getElementById("currency").value || state.currency;
+      document.getElementById("suggestedPriceText").textContent = `${price} ${curr}`;
+    }
+
+    function addProduct() {
+      if (!state.isPro && state.products.length >= 2) {
+        showToast("Limite gratuite (2 produits). Passe en PRO.");
+        return;
+      }
+
+      const name = document.getElementById("prodName").value.trim();
+      const price = computeSuggestedPrice(
+        document.getElementById("costPrice").value,
+        document.getElementById("extraFees").value,
+        document.getElementById("marginPct").value
+      );
+
+      if (!name || price <= 0) {
+        showToast("Entre un nom et un coût supérieur à 0");
+        return;
+      }
+
+      const item = {
+        id: Date.now().toString(),
+        name,
+        price,
+        margin: parseFloat(document.getElementById("marginPct").value) || 0,
+        stock: parseInt(document.getElementById("stockQty").value, 10) || 0,
+        minStock: parseInt(document.getElementById("minStock").value, 10) || 0,
+        b1: document.getElementById("b1").value.trim() || "Qualité vérifiée",
+        b2: document.getElementById("b2").value.trim() || "Livraison rapide",
+        b3: document.getElementById("b3").value.trim() || "Commande simple"
+      };
+
+      state.products.unshift(item);
+      saveState();
+
+      document.getElementById("prodName").value = "";
+      document.getElementById("costPrice").value = "";
+      document.getElementById("b1").value = "";
+      document.getElementById("b2").value = "";
+      document.getElementById("b3").value = "";
+      updatePreviewPrice();
+      showToast("Produit ajouté !");
+    }
+
+    function deleteProduct(id) {
+      state.products = state.products.filter((p) => p.id !== id);
+      saveState();
+      showToast("Produit supprimé");
+    }
+
+    function buildFiche(p) {
+      return [
+        `🛍️ *${p.name}*`,
+        `💰 Prix : *${p.price} ${state.currency}*`,
+        `✅ ${p.b1}`,
+        `✅ ${p.b2}`,
+        `✅ ${p.b3}`,
+        `📦 Stock : ${p.stock > 0 ? p.stock + " disponible(s)" : "Sur commande"}`
+      ].join("\n");
+    }
+
+    function buildTiktokScript(p) {
+      return [
+        `[0-3s] Tu veux ${p.name} au juste prix ? Regarde ça.`,
+        `[3-12s] ${p.b1}. En plus, ${p.b2.toLowerCase()} et ${p.b3.toLowerCase()}.`,
+        `[12-17s] Tarif : ${p.price} ${state.currency}. Quantités : ${p.stock}.`,
+        `[17-20s] Clique sur le lien ou écris-moi sur WhatsApp pour réserver maintenant.`
+      ].join("\n");
+    }
+
+    function buildOrderWhatsAppLink(p) {
+      const msg = encodeURIComponent(
+        `Bonjour, je souhaite commander :\n• Produit : ${p.name}\n• Prix unitaire : ${p.price} ${state.currency}\n• Quantité : 1`
+      );
+      return state.whatsapp
+        ? `https://wa.me/${state.whatsapp}?text=${msg}`
+        : `https://wa.me/?text=${msg}`;
+    }
+
+    function copyContent(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast("Copié dans le presse-papiers")).catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      showToast("Copié !");
+    }
+
+    function renderAll() {
+      const badge = document.getElementById("planBadge");
+      const proBox = document.getElementById("proBox");
+
+      if (state.isPro) {
+        badge.textContent = "PRO ILLIMITÉ";
+        badge.className = "badge badge-pro";
+        proBox.style.display = "none";
+      } else {
+        badge.textContent = `GRATUIT (${state.products.length}/2)`;
+        badge.className = "badge badge-free";
+        proBox.style.display = "block";
+      }
+
+      const listEl = document.getElementById("productList");
+      if (!state.products.length) {
+        listEl.innerHTML = `<p style="color:#64748b; margin:0;">Aucun produit enregistré pour l'instant.</p>`;
+        return;
+      }
+
+      listEl.innerHTML = state.products.map((p) => {
+        const isLow = p.stock <= p.minStock;
+        const fiche = buildFiche(p).replace(/`/g, "");
+        const script = buildTiktokScript(p).replace(/`/g, "");
+        const waUrl = buildOrderWhatsAppLink(p);
+
+        return `
+          <div class="product-item">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+              <div>
+                <div style="font-weight:800; font-size:15px;">${p.name}</div>
+                <div style="font-size:13px; font-weight:700; color:#047857; margin-top:2px;">
+                  ${p.price} ${state.currency} • Marge ${p.margin}%
+                </div>
+              </div>
+              <span class="badge ${isLow ? "stock-low" : "stock-ok"}">
+                ${isLow ? "Réappro (" + p.stock + ")" : "Stock OK (" + p.stock + ")"}
+              </span>
+            </div>
+
+            <div class="row-2" style="margin-top:10px; margin-bottom:8px;">
+              <button type="button" class="btn-light" onclick='copyContent(${JSON.stringify(buildFiche(p))})'>Copier Fiche</button>
+              <button type="button" class="btn-light" onclick='copyContent(${JSON.stringify(buildTiktokScript(p))})'>Copier Script TikTok</button>
+            </div>
+
+            <a href="${waUrl}" target="_blank" rel="noreferrer" class="btn-link btn-green" style="margin-bottom:8px;">
+              Lien Commande Express WhatsApp
+            </a>
+
+            <button type="button" class="btn-light" style="padding:7px; font-size:11px; color:#b91c1c;" onclick="deleteProduct('${p.id}')">
+              Supprimer ce produit
+            </button>
+          </div>
+        `;
+      }).join("");
+    }
+
+    loadState();
+  </script>
+</body>
+</html>
